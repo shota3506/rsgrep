@@ -1,11 +1,9 @@
 use std::env;
 use std::error::Error;
-use std::fs::File;
-use std::io::prelude::*;
+use std::io::{self, Read};
 
 pub struct Config {
     pub query: String,
-    pub filename: String,
     pub case_sensitive: bool,
 }
 
@@ -17,26 +15,18 @@ impl Config {
             Some(arg) => arg,
             None => return Err("Didn't get a query string"),
         };
-        let filename = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Didn't get a file name"),
-        };
 
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
 
         Ok(Config {
             query,
-            filename,
             case_sensitive,
         })
     }
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let mut f = File::open(config.filename)?;
-
-    let mut contents = String::new();
-    f.read_to_string(&mut contents)?;
+    let contents = read()?;
 
     let results = if config.case_sensitive {
         search(&config.query, &contents)
@@ -49,6 +39,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+pub fn read() -> Result<String, io::Error> {
+    let mut contents = String::new();
+
+    let stdin = io::stdin();
+    let mut handle = stdin.lock();
+    handle.read_to_string(&mut contents)?;
+
+    Ok(contents)
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
