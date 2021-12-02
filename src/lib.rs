@@ -1,6 +1,7 @@
-use std::env;
 use std::error::Error;
 use std::io::{self, Read};
+
+use clap::{App, Arg};
 
 pub struct Config {
     pub query: String,
@@ -8,18 +9,28 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(mut args: std::env::Args) -> Result<Config, &'static str> {
-        args.next();
+    pub fn new() -> Result<Config, &'static str> {
+        let matches = App::new("rsgrep")
+            .version("1.0")
+            .about("simple grep command")
+            .arg(Arg::with_name("<PATTERN>").required(true))
+            .arg(
+                Arg::with_name("case-sensitive")
+                    .help("Search case sensitively")
+                    .short("s")
+                    .long("case-sensitive"),
+            )
+            .get_matches();
 
-        let query = match args.next() {
+        let q = match matches.value_of("<PATTERN>") {
             Some(arg) => arg,
             None => return Err("Didn't get a query string"),
         };
 
-        let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
+        let case_sensitive = matches.is_present("case-sensitive");
 
         Ok(Config {
-            query,
+            query: q.to_string(),
             case_sensitive,
         })
     }
