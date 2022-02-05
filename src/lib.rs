@@ -10,24 +10,26 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Result<Config, &'static str> {
+        const PATTERN_KEY: &str = "<PATTERN>";
+        const CASE_SENSITIVE_KEY: &str = "case-sensitive";
+
         let matches = App::new("rsgrep")
-            .version("1.0")
             .about("simple grep command")
-            .arg(Arg::with_name("<PATTERN>").required(true))
+            .arg(Arg::with_name(PATTERN_KEY).required(true))
             .arg(
-                Arg::with_name("case-sensitive")
+                Arg::with_name(CASE_SENSITIVE_KEY)
                     .help("Search case sensitively")
                     .short("s")
                     .long("case-sensitive"),
             )
             .get_matches();
 
-        let q = match matches.value_of("<PATTERN>") {
+        let q = match matches.value_of(PATTERN_KEY) {
             Some(arg) => arg,
             None => return Err("Didn't get a query string"),
         };
 
-        let case_sensitive = matches.is_present("case-sensitive");
+        let case_sensitive = matches.is_present(CASE_SENSITIVE_KEY);
 
         Ok(Config {
             query: q.to_string(),
