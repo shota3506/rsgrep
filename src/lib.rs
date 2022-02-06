@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::io::{self, Read};
+use std::io;
 
 use clap::{App, Arg};
 
@@ -41,7 +41,7 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = read()?;
+    let contents = read(&mut io::stdin().lock())?;
 
     let results = if config.case_sensitive {
         search::search(&config.query, &contents)?
@@ -49,19 +49,22 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         search::search_case_insensitive(&config.query, &contents)?
     };
 
-    for line in results {
-        println!("{}", line);
-    }
+    write(&mut io::stdout().lock(), results)?;
 
     Ok(())
 }
 
-pub fn read() -> Result<String, io::Error> {
+fn read(r: &mut dyn io::Read) -> Result<String, io::Error> {
     let mut contents = String::new();
-
-    let stdin = io::stdin();
-    let mut handle = stdin.lock();
-    handle.read_to_string(&mut contents)?;
-
+    r.read_to_string(&mut contents)?;
     Ok(contents)
+}
+
+fn write(w: &mut dyn io::Write, results: Vec<&str>) -> Result<(), Box<dyn Error>> {
+    for line in results {
+        let mut s = line.to_string();
+        s.push_str("\n");
+        w.write(s.as_bytes())?;
+    }
+    Ok(())
 }
