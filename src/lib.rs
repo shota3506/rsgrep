@@ -12,12 +12,16 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Result<Config, &'static str> {
-        const PATTERN_KEY: &str = "<PATTERN>";
+        const PATTERN_KEY: &str = "PATTERN";
         const CASE_SENSITIVE_KEY: &str = "case-sensitive";
 
         let matches = App::new("rsgrep")
-            .about("simple grep command")
-            .arg(Arg::with_name(PATTERN_KEY).required(true))
+            .about("Simple grep command")
+            .arg(
+                Arg::with_name(PATTERN_KEY)
+                    .required(true)
+                    .help("A regular expression used for searching"),
+            )
             .arg(
                 Arg::with_name(CASE_SENSITIVE_KEY)
                     .help("Search case sensitively")
