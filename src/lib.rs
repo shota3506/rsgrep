@@ -1,9 +1,9 @@
 use std::error::Error;
 use std::io;
+use std::io::prelude::*;
 
 use clap::{App, Arg};
-
-mod search;
+use regex;
 
 pub struct Config {
     pub query: String,
@@ -45,30 +45,26 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = read(&mut io::stdin().lock())?;
+    let query = config.query;
+    let re = regex::RegexBuilder::new(&query)
+        .case_insensitive(!config.case_sensitive)
+        .build()?;
 
-    let results = if config.case_sensitive {
-        search::search(&config.query, &contents)?
-    } else {
-        search::search_case_insensitive(&config.query, &contents)?
-    };
-
-    write(&mut io::stdout().lock(), results)?;
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        let m = re.find(&line);
+        if let Some(_) = m {
+            write(&mut io::stdout().lock(), &line)?;
+        }
+    }
 
     Ok(())
 }
 
-fn read(r: &mut dyn io::Read) -> Result<String, io::Error> {
-    let mut contents = String::new();
-    r.read_to_string(&mut contents)?;
-    Ok(contents)
-}
-
-fn write(w: &mut dyn io::Write, results: Vec<&str>) -> Result<(), Box<dyn Error>> {
-    for line in results {
-        let mut s = line.to_string();
-        s.push_str("\n");
-        w.write(s.as_bytes())?;
-    }
+fn write(w: &mut dyn io::Write, result: &str) -> Result<(), Box<dyn Error>> {
+    let mut s = result.to_string();
+    s.push_str("\n");
+    w.write(s.as_bytes())?;
     Ok(())
 }
